@@ -1,0 +1,12 @@
+# Compiled binaries
+*.exe
+*.o
+*.gch
+*.out
+
+# VS Code settings
+.vscode/
+
+# Build artifacts
+build/
+bin/
