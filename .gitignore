@@ -4,6 +4,9 @@
 *.gch
 *.out
 
+# OpenGl precompiled binaries
+libs/
+
 # VS Code settings
 .vscode/
 
