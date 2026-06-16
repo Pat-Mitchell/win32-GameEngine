@@ -1,26 +1,26 @@
 /// @file quaternion.cpp
-/// @brief Implementation file for quaternion mathematics
+/// @brief Implementation file for Quaternion mathematics
 
 #include "quaternion.h"
 #include <cmath>
 
 // Constructors
-quaternion::quaternion() : w(1.0f), x(0.0f), y(0.0f), z(0.0f) {}
-quaternion::quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
+Quaternion::Quaternion() : w(1.0f), x(0.0f), y(0.0f), z(0.0f) {}
+Quaternion::Quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
 
-quaternion::quaternion(const Vec3& axis, float angle) {
+Quaternion::Quaternion(const Vec3& axis, float angle) {
   fromAxisAngle(axis, angle);
 }
 
-float quaternion::length() const {
+float Quaternion::length() const {
   return std::sqrt(w * w + x * x + y * y + z * z);
 }
 
-float quaternion::lengthSquared() const {
+float Quaternion::lengthSquared() const {
   return w * w + x * x + y * y + z * z;
 }
 
-void quaternion::normalize() {
+void Quaternion::normalize() {
   float len = length();
   if(len > 0.0f) {
     float invLen = 1.0f / len;
@@ -31,39 +31,39 @@ void quaternion::normalize() {
   }
 }
 
-quaternion quaternion::normalized() const {
-  quaternion result(*this);
+Quaternion Quaternion::normalized() const {
+  Quaternion result(*this);
   result.normalize();
   return result;
 }
 
-quaternion quaternion::conjugate() const {
-  return quaternion(w, -x, -y, -z);
+Quaternion Quaternion::conjugate() const {
+  return Quaternion(w, -x, -y, -z);
 }
 
-quaternion quaternion::inverse() const {
+Quaternion Quaternion::inverse() const {
   float norm = lengthSquared();
   if(norm > 0.0f) {
     float invNorm = 1.0f / norm;
-    return quaternion(w * invNorm, -x * invNorm, -y * invNorm, -z * invNorm);
+    return Quaternion(w * invNorm, -x * invNorm, -y * invNorm, -z * invNorm);
   }
-  return quaternion(1.0f, 0.0f, 0.0f, 0.0f);
+  return Quaternion(1.0f, 0.0f, 0.0f, 0.0f);
 }
 
 // ────── ⋆⋅☆⋅⋆ ────────
 //      Operations
 // ────── ⋆⋅☆⋅⋆ ────────
 
-quaternion quaternion::operator+(const quaternion& other) const {
-  return quaternion(w + other.w, x + other.x, y + other.y, z + other.z);
+Quaternion Quaternion::operator+(const Quaternion& other) const {
+  return Quaternion(w + other.w, x + other.x, y + other.y, z + other.z);
 }
 
-quaternion quaternion::operator-(const quaternion& other) const {
-  return quaternion(w - other.w, x - other.x, y - other.y, z - other.z);
+Quaternion Quaternion::operator-(const Quaternion& other) const {
+  return Quaternion(w - other.w, x - other.x, y - other.y, z - other.z);
 }
 
-quaternion quaternion::operator*(const quaternion& other) const {
-  return quaternion(
+Quaternion Quaternion::operator*(const Quaternion& other) const {
+  return Quaternion(
     w * other.w - x * other.x - y * other.y - z * other.z,
     w * other.x + x * other.w + y * other.z - z * other.y,
     w * other.y - x * other.z + y * other.w + z * other.x,
@@ -71,16 +71,16 @@ quaternion quaternion::operator*(const quaternion& other) const {
   );
 }
 
-quaternion quaternion::operator*(float scalar) const {
-  return quaternion(w * scalar, x * scalar, y * scalar, z * scalar);
+Quaternion Quaternion::operator*(float scalar) const {
+  return Quaternion(w * scalar, x * scalar, y * scalar, z * scalar);
 }
 
-Vec3 quaternion::rotateVector(const Vec3& vector) const {
-  // Convert vector to quaternion
-  quaternion vecQuat(0.0f, vector.x, vector.y, vector.z);
+Vec3 Quaternion::rotateVector(const Vec3& vector) const {
+  // Convert vector to Quaternion
+  Quaternion vecQuat(0.0f, vector.x, vector.y, vector.z);
 
   // Rotate: q * v * q^-1
-  quaternion result = *this * vecQuat * inverse();
+  Quaternion result = *this * vecQuat * inverse();
 
   return Vec3(result.x, result.y, result.z);
 }
@@ -88,18 +88,18 @@ Vec3 quaternion::rotateVector(const Vec3& vector) const {
 // Conversion operations
 // ────── ⋆⋅☆⋅⋆ ────────
 
-Mat4 quaternion::toMatrix() const {
-  normalized();
+Mat4 Quaternion::toMatrix() const {
+  Quaternion q = normalized();
 
-  float xx = x * x;
-  float yy = y * y;
-  float zz = z * z;
-  float xy = x * y;
-  float xz = x * z;
-  float yz = y * z;
-  float wx = w * x;
-  float wy = w * y;
-  float wz = w * z;
+  float xx = q.x * q.x;
+  float yy = q.y * q.y;
+  float zz = q.z * q.z;
+  float xy = q.x * q.y;
+  float xz = q.x * q.z;
+  float yz = q.y * q.z;
+  float wx = q.w * q.x;
+  float wy = q.w * q.y;
+  float wz = q.w * q.z;
 
   Mat4 matrix;
   matrix.m[0][0] = 1.0f - 2.0f * (yy + zz);
@@ -125,7 +125,7 @@ Mat4 quaternion::toMatrix() const {
   return matrix;
 }
 
-void quaternion::fromAxisAngle(const Vec3& axis, float angle) {
+void Quaternion::fromAxisAngle(const Vec3& axis, float angle) {
   Vec3 normalizedAxis = axis.normalized();
   float halfAngle = angle * 0.5f;
   float sinHalfAngle = std::sin(halfAngle);
@@ -136,7 +136,7 @@ void quaternion::fromAxisAngle(const Vec3& axis, float angle) {
   z = normalizedAxis.z * sinHalfAngle;
 }
 
-void quaternion::fromEulerAngles(float roll, float pitch, float yaw) {
+void Quaternion::fromEulerAngles(float roll, float pitch, float yaw) {
   float cr = std::cos(roll * 0.5f);
   float sr = std::sin(roll * 0.5f);
   float cp = std::cos(pitch * 0.5f);
@@ -150,7 +150,7 @@ void quaternion::fromEulerAngles(float roll, float pitch, float yaw) {
   z = cr * cp * sy - sr * sp * cy;
 }
 
-Vec3 quaternion::toEulerAngles() const {
+Vec3 Quaternion::toEulerAngles() const {
   float sinr_cosp = 2.0f * (w * x + y * z);
   float cosr_cosp = 1.0f - 2.0f * (x * x + y * y);
   float roll = std::atan2(sinr_cosp, cosr_cosp);
@@ -174,16 +174,16 @@ Vec3 quaternion::toEulerAngles() const {
 //   Utility functions
 // ────── ⋆⋅☆⋅⋆ ────────
 
-quaternion quaternion::slerp(const quaternion& a, const quaternion& b, float t) {
-  quaternion qa = a.normalized();
-  quaternion qb = b.normalized();
+Quaternion Quaternion::slerp(const Quaternion& a, const Quaternion& b, float t) {
+  Quaternion qa = a.normalized();
+  Quaternion qb = b.normalized();
 
   // calculate dot product
   float dot = qa.w * qb.w + qa.x * qb.x + qa.y * qb.y + qa.z * qb.z;
 
-  // If dot product is negative, flip one quaternion
+  // If dot product is negative, flip one Quaternion
   if(dot < 0.0f) {
-    qb = quaternion(-qb.w, -qb.x, -qb.y, -qb.z);
+    qb = Quaternion(-qb.w, -qb.x, -qb.y, -qb.z);
     dot = -dot;
   }
 
@@ -196,15 +196,15 @@ quaternion quaternion::slerp(const quaternion& a, const quaternion& b, float t) 
   float theta_0 = std::acos(dot);
   float theta = theta_0 * t;
 
-  quaternion qPerp = (qb - qa * dot).normalized();
+  Quaternion qPerp = (qb - qa * dot).normalized();
   return qa * std::cos(theta) + qPerp * std::sin(theta);
 }
 
-quaternion quaternion::identity() {
-  return quaternion(1.0f, 0.0f, 0.0f, 0.0f);
+Quaternion Quaternion::identity() {
+  return Quaternion(1.0f, 0.0f, 0.0f, 0.0f);
 }
 
-quaternion quaternion::fromToRotation(const Vec3& from, const Vec3& to) {
+Quaternion Quaternion::fromToRotation(const Vec3& from, const Vec3& to) {
   // Normalize input vectors
   Vec3 fromNorm = from.normalized();
   Vec3 toNorm = to.normalized();
@@ -223,17 +223,17 @@ quaternion quaternion::fromToRotation(const Vec3& from, const Vec3& to) {
       axis = Vec3(0.0f, 0.0f, 1.0f);
 
     axis = axis.cross(fromNorm).normalized();
-    return quaternion(axis, 3.14159265358979323846f);
+    return Quaternion(axis, 3.14159265358979323846f);
   }
 
   // General case
   Vec3 axis = fromNorm.cross(toNorm).normalized();
   float angle = std::acos(fromNorm.dot(toNorm));
 
-  return quaternion(axis, angle);
+  return Quaternion(axis, angle);
 }
 
 // non-member operators
-quaternion operator*(float scalar, const quaternion& q) {
+Quaternion operator*(float scalar, const Quaternion& q) {
   return q * scalar;
 }

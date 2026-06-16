@@ -1,4 +1,4 @@
-/// @file quaternion.h
+/// @file Quaternion.h
 /// @brief Quaternion mathematics
 
 #pragma once
@@ -6,25 +6,25 @@
 #include "vector.h"
 #include "Mat4.h"
 
-struct quaternion {
+struct Quaternion {
   float w, x, y, z;
 
   // Constructors
-  quaternion();
-  quaternion(float w, float x, float y, float z);
-  quaternion(const Vec3& axis, float angle); // From axis-angle
+  Quaternion();
+  Quaternion(float w, float x, float y, float z);
+  Quaternion(const Vec3& axis, float angle); // From axis-angle
 
   float length() const;
   float lengthSquared() const;
   void normalize();
-  quaternion normalized() const;
-  quaternion conjugate() const;
-  quaternion inverse() const;
+  Quaternion normalized() const;
+  Quaternion conjugate() const;
+  Quaternion inverse() const;
 
-  quaternion operator+(const quaternion& other) const;
-  quaternion operator-(const quaternion& other) const;
-  quaternion operator*(const quaternion& other) const;
-  quaternion operator*(float scalar) const;
+  Quaternion operator+(const Quaternion& other) const;
+  Quaternion operator-(const Quaternion& other) const;
+  Quaternion operator*(const Quaternion& other) const;
+  Quaternion operator*(float scalar) const;
   Vec3 rotateVector(const Vec3& vector) const;
 
   Mat4 toMatrix() const;
@@ -32,10 +32,10 @@ struct quaternion {
   void fromEulerAngles(float roll, float pitch, float yaw);
   Vec3 toEulerAngles() const;
 
-  static quaternion slerp(const quaternion& a, const quaternion& b, float t);
-  static quaternion identity();
-  static quaternion fromToRotation(const Vec3& from, const Vec3& to);
+  static Quaternion slerp(const Quaternion& a, const Quaternion& b, float t);
+  static Quaternion identity();
+  static Quaternion fromToRotation(const Vec3& from, const Vec3& to);
 };
 
 // non-member operator
-quaternion operator*(float scalar, const quaternion& q);
+Quaternion operator*(float scalar, const Quaternion& q);
