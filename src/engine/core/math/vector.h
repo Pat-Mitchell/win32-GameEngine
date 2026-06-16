@@ -13,10 +13,12 @@ struct Vec3 {
   Vec3 operator-() const;
   Vec3& operator+=(const Vec3& other);
   Vec3& operator/=(float scalar);
+  bool operator ==(const Vec3& other) const;
   float dot(const Vec3& other) const;
   Vec3 cross(const Vec3& other) const;
   float length() const;
-  Vec3 normalize() const;
+  void normalize();
+  Vec3 normalized() const;
   float distance(const Vec3& other) const;
 };
 
@@ -30,6 +32,6 @@ struct Vec4 {
   Vec4 operator-(const Vec4& other) const;
   Vec4 operator*(float scalar) const;
   Vec4 operator/(float scalar) const;
-  Vec4 operator+=(const Vec4& other) const;
-  Vec4 operator/=(float scalar) const;
+  Vec4& operator+=(const Vec4& other);
+  Vec4& operator/=(float scalar);
 };

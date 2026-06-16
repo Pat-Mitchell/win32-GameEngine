@@ -81,7 +81,7 @@ Mat4 Mat4::rotateZ(float angle) {
 
 // Rotation matrix around arbitrary axis
 Mat4 Mat4::rotate(float angle, const Vec3& axis) {
-  Vec3 normalized_axis = axis.normalize();
+  Vec3 normalized_axis = axis.normalized();
   float cos_a = std::cos(angle);
   float sin_a = std::sin(angle);
   float one_minus_cos = 1.0f - cos_a;
@@ -134,8 +134,8 @@ Mat4 Mat4::perspective(float fov, float aspect, float fNear, float fFar) {
 
 // Look at matrix
 Mat4 Mat4::lookAt(const Vec3& position, const Vec3& target, const Vec3& up) {
-  Vec3 forward = (target - position).normalize();
-  Vec3 side = forward.cross(up).normalize();
+  Vec3 forward = (target - position).normalized();
+  Vec3 side = forward.cross(up).normalized();
   Vec3 newUp = side.cross(forward);
 
   Mat4 result(1.0f);

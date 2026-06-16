@@ -1,12 +1,12 @@
 /// @file vector.cpp
-/// @brief Struct for vector3. 
+/// @brief Structs for vec3 and vec4. 
 
 #include "vector.h"
 #include <cmath>
 
-// Constructor
-Vec3::Vec3() : x(0.0f), y(0.0f), z(0.0f) {}
-Vec3::Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+// ────── ⋆⋅☆⋅⋆ ────────
+//        Vec3
+// ────── ⋆⋅☆⋅⋆ ────────
 
 // Vector addition
 Vec3 Vec3::operator+(const Vec3& other) const {
@@ -54,6 +54,12 @@ Vec3& Vec3::operator/=(float scalar) {
   return *this;
 }
 
+// Equivalence
+bool Vec3::operator==(const Vec3& other) const {
+  if(other.x == x && other.y == y && other.z == z) return true;
+  return false;
+}
+
 // Dot product
 float Vec3::dot(const Vec3& other) const {
   return x * other.x + y * other.y + z * other.z;
@@ -74,7 +80,20 @@ float Vec3::length() const {
 }
 
 // Normalize vector
-Vec3 Vec3::normalize() const {
+void Vec3::normalize() {
+  float len = length();
+  if(len > 0.0f) {
+    x /= len;
+    y /= len; 
+    z /= len;
+  } else {
+    x = 0.0f;
+    y = 0.0f;
+    z = 0.0f;
+  }
+}
+
+Vec3 Vec3::normalized() const {
   float len = length();
   if(len > 0.0f) {
     return Vec3(x / len, y / len, z / len);
@@ -88,4 +107,51 @@ float Vec3::distance(const Vec3& other) const {
   float dy = y - other.y;
   float dz = z - other.z;
   return std::sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+// ────── ⋆⋅☆⋅⋆ ────────
+//        Vec4
+// ────── ⋆⋅☆⋅⋆ ────────
+
+// Vector addition
+Vec4 Vec4::operator+(const Vec4& other) const {
+  return Vec4(x + other.x, y + other.y, z + other.z, w + other.w);
+}
+
+// Vector subtraction
+Vec4 Vec4::operator-(const Vec4& other) const {
+  return Vec4(x - other.x, y - other.y, z - other.z, w - other.w);
+}
+
+// Scalar multiplication
+Vec4 Vec4::operator*(float scalar) const {
+  return Vec4(x * scalar, y * scalar, z * scalar, w * scalar);
+}
+
+// Scalar division
+Vec4 Vec4::operator/(float scalar) const {
+  if(scalar != 0.0f) {
+    return Vec4(x / scalar, y / scalar, z / scalar, w / scalar);
+  }
+  return Vec4(0.0f, 0.0f, 0.0f, 0.0f);
+}
+
+// Vector addition assignment
+Vec4& Vec4::operator+=(const Vec4& other) {
+  x += other.x;
+  y += other.y;
+  z += other.z;
+  w += other.w;
+  return *this;
+}
+
+// Scalar division assignment
+Vec4& Vec4::operator/=(float scalar) {
+  if(scalar != 0.0f) {
+    x /= scalar;
+    y /= scalar;
+    z /= scalar;
+    w /= scalar;
+  }
+  return *this;
 }
