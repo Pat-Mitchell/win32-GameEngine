@@ -16,10 +16,10 @@ struct Mat4
   float m[4][4];
 
   Mat4();
-  Mat4(float diagonal);
+  Mat4(float fDiagonal);
 
   static Mat4 identity();
-  static Mat4 translate(const Vec3& translation);
+  static Mat4 translate(const Vec3& v3Translation);
   static Mat4 rotateX(float angle);
   static Mat4 rotateY(float angle);
   static Mat4 rotateZ(float angle);

@@ -14,10 +14,10 @@ Mat4::Mat4() {
 }
 
 // Constructor with diagonal value
-Mat4::Mat4(float diagonal) {
+Mat4::Mat4(float fDiagonal) {
   for(int i = 0; i < 4; i++) {
     for(int j = 0; j < 4; j++) {
-      m[i][j] = (i == j) ? diagonal : 0.0f;
+      m[i][j] = (i == j) ? fDiagonal : 0.0f;
     }
   }
 }
@@ -28,11 +28,11 @@ Mat4 Mat4::identity() {
 }
 
 // Translation matrix
-Mat4 Mat4::translate(const Vec3& translation) {
+Mat4 Mat4::translate(const Vec3& v3Translation) {
   Mat4 result(1.0f);
-  result.m[0][3] = translation.x;
-  result.m[1][3] = translation.y;
-  result.m[2][3] = translation.z;
+  result.m[0][3] = v3Translation.x;
+  result.m[1][3] = v3Translation.y;
+  result.m[2][3] = v3Translation.z;
   return result;
 }
 
@@ -41,9 +41,9 @@ Mat4 Mat4::translate(const Vec3& translation) {
 // ────── ⋆⋅☆⋅⋆ ────────
 
 // Rotation matrix around X axis
-Mat4 Mat4::rotateX(float angle) {
-  float cos_a = std::cos(angle);
-  float sin_a = std::sin(angle);
+Mat4 Mat4::rotateX(float fAngle) {
+  float cos_a = std::cos(fAngle);
+  float sin_a = std::sin(fAngle);
 
   Mat4 result(1.0f);
   result.m[1][1] = cos_a;
@@ -54,9 +54,9 @@ Mat4 Mat4::rotateX(float angle) {
 }
 
 // Rotation matix around Y axis
-Mat4 Mat4::rotateY(float angle) {
-  float cos_a = std::cos(angle);
-  float sin_a = std::sin(angle);
+Mat4 Mat4::rotateY(float fAngle) {
+  float cos_a = std::cos(fAngle);
+  float sin_a = std::sin(fAngle);
 
   Mat4 result(1.0f);
   result.m[0][0] = cos_a;
@@ -67,9 +67,9 @@ Mat4 Mat4::rotateY(float angle) {
 }
 
 // Rotation matrix around Z axis
-Mat4 Mat4::rotateZ(float angle) {
-  float cos_a = std::cos(angle);
-  float sin_a = std::sin(angle);
+Mat4 Mat4::rotateZ(float fAngle) {
+  float cos_a = std::cos(fAngle);
+  float sin_a = std::sin(fAngle);
 
   Mat4 result(1.0f);
   result.m[0][0] = cos_a;
@@ -80,10 +80,10 @@ Mat4 Mat4::rotateZ(float angle) {
 }
 
 // Rotation matrix around arbitrary axis
-Mat4 Mat4::rotate(float angle, const Vec3& axis) {
-  Vec3 normalized_axis = axis.normalized();
-  float cos_a = std::cos(angle);
-  float sin_a = std::sin(angle);
+Mat4 Mat4::rotate(float fAngle, const Vec3& v3Axis) {
+  Vec3 normalized_axis = v3Axis.normalized();
+  float cos_a = std::cos(fAngle);
+  float sin_a = std::sin(fAngle);
   float one_minus_cos = 1.0f - cos_a;
 
   Mat4 result(1.0f);
@@ -103,27 +103,27 @@ Mat4 Mat4::rotate(float angle, const Vec3& axis) {
 }
 
 // Scale matrix
-Mat4 Mat4::scale(const Vec3& scale) {
+Mat4 Mat4::scale(const Vec3& v3Scale) {
   Mat4 result(1.0f);
-  result.m[0][0] = scale.x;
-  result.m[1][1] = scale.y;
-  result.m[2][2] = scale.z;
+  result.m[0][0] = v3Scale.x;
+  result.m[1][1] = v3Scale.y;
+  result.m[2][2] = v3Scale.z;
   return result;
 }
 
 // Uniform scale matrix
-Mat4 Mat4::scale(float scale) {
+Mat4 Mat4::scale(float v3Scale) {
   Mat4 result(1.0f);
-  result.m[0][0] = result.m[1][1] = result.m[2][2] = scale;
+  result.m[0][0] = result.m[1][1] = result.m[2][2] = v3Scale;
   return result;
 }
 
 // Perspective projection matrix
-Mat4 Mat4::perspective(float fov, float aspect, float fNear, float fFar) {
+Mat4 Mat4::perspective(float fov, float fAspect, float fNear, float fFar) {
   float f = 1.0f / std::tan(fov * 0.5f);
 
   Mat4 result(0.0f);
-  result.m[0][0] = f / aspect;
+  result.m[0][0] = f / fAspect;
   result.m[1][1] = f;
   result.m[2][2] = (fFar + fNear) / (fNear - fFar);
   result.m[2][3] = (2.0f * fFar * fNear) / (fNear - fFar);
@@ -133,9 +133,9 @@ Mat4 Mat4::perspective(float fov, float aspect, float fNear, float fFar) {
 }
 
 // Look at matrix
-Mat4 Mat4::lookAt(const Vec3& position, const Vec3& target, const Vec3& up) {
-  Vec3 forward = (target - position).normalized();
-  Vec3 side = forward.cross(up).normalized();
+Mat4 Mat4::lookAt(const Vec3& v3Position, const Vec3& v3Target, const Vec3& v3Up) {
+  Vec3 forward = (v3Target - v3Position).normalized();
+  Vec3 side = forward.cross(v3Up).normalized();
   Vec3 newUp = side.cross(forward);
 
   Mat4 result(1.0f);
@@ -151,21 +151,21 @@ Mat4 Mat4::lookAt(const Vec3& position, const Vec3& target, const Vec3& up) {
   result.m[2][1] = -forward.y;
   result.m[2][2] = -forward.z;
   
-  result.m[0][3] = -side.dot(position);
-  result.m[1][3] = -newUp.dot(position);
-  result.m[2][3] = forward.dot(position);
+  result.m[0][3] = -side.dot(v3Position);
+  result.m[1][3] = -newUp.dot(v3Position);
+  result.m[2][3] = forward.dot(v3Position);
   
   return result;
 }
 
 // Matrix multiplication
-Mat4 Mat4::operator*(const Mat4& other) const {
+Mat4 Mat4::operator*(const Mat4& m4Other) const {
   Mat4 result;
   for(int i = 0; i < 4; i++) {
     for(int j = 0; j < 4; j++) {
       result.m[i][j] = 0.0f;
       for(int k = 0; k < 4; k++) {
-        result.m[i][j] += m[i][k] * other.m[k][j];
+        result.m[i][j] += m[i][k] * m4Other.m[k][j];
       }
     }
   }
@@ -173,21 +173,21 @@ Mat4 Mat4::operator*(const Mat4& other) const {
 }
 
 // Matrix-vector multiplication
-Vec3 Mat4::operator*(const Vec3& vector) const {
-  float x = m[0][0] * vector.x + m[0][1] * vector.y + m[0][2] * vector.z + m[0][3];
-  float y = m[1][0] * vector.x + m[1][1] * vector.y + m[1][2] * vector.z + m[1][3];
-  float z = m[2][0] * vector.x + m[2][1] * vector.y + m[2][2] * vector.z + m[2][3];
+Vec3 Mat4::operator*(const Vec3& v3Vector) const {
+  float x = m[0][0] * v3Vector.x + m[0][1] * v3Vector.y + m[0][2] * v3Vector.z + m[0][3];
+  float y = m[1][0] * v3Vector.x + m[1][1] * v3Vector.y + m[1][2] * v3Vector.z + m[1][3];
+  float z = m[2][0] * v3Vector.x + m[2][1] * v3Vector.y + m[2][2] * v3Vector.z + m[2][3];
   return Vec3(x, y, z);
 }
 
 // Get a specific row
-Vec4 Mat4::getRow(int index) const {
-  return Vec4(m[index][0], m[index][1], m[index][2], m[index][3]);
+Vec4 Mat4::getRow(int iIndex) const {
+  return Vec4(m[iIndex][0], m[iIndex][1], m[iIndex][2], m[iIndex][3]);
 }
 
 // Get a specific column
-Vec4 Mat4::getColumn(int index) const {
-  return Vec4(m[0][index], m[1][index], m[2][index], m[3][index]);
+Vec4 Mat4::getColumn(int iIndex) const {
+  return Vec4(m[0][iIndex], m[1][iIndex], m[2][iIndex], m[3][iIndex]);
 }
 
 // Transpose matrix
