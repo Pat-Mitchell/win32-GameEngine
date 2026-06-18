@@ -20,10 +20,10 @@ struct Mat4
 
   static Mat4 identity();
   static Mat4 translate(const Vec3& v3Translation);
-  static Mat4 rotateX(float angle);
-  static Mat4 rotateY(float angle);
-  static Mat4 rotateZ(float angle);
-  static Mat4 rotate(float angle, const Vec3& axis);
+  static Mat4 rotateX(float fAngle);
+  static Mat4 rotateY(float fAngle);
+  static Mat4 rotateZ(float fAngle);
+  static Mat4 rotate(float fAngle, const Vec3& v3Axis);
   static Mat4 scale(const Vec3& scale);
   static Mat4 scale(float scale); // Uniform scale
   static Mat4 perspective(float fov, float aspect, float fNear, float fFar);
