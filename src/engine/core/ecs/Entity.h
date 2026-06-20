@@ -10,6 +10,7 @@ constexpr EntityID INVALID_ENTITY = 0;
 
 class EntityManager {
   public:
+    EntityManager();
     EntityID createEntity();
     void destroyEntity(EntityID entity);
     bool isValid(EntityID entity) const;
