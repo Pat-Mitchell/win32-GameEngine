@@ -12,10 +12,12 @@ class System{
 };
 
 class SystemManager {
-  public: 
+  public:
+    void registerSystem(System* system);
+    void updateSystems(float fDeltaTime);
+    void removeSystem(System* system);
+
+  private: 
     std::vector<System*> m_Systems;
 
-  private:
-    void registerSystem(System* system);
-    void updateSystem(float fDeltaTime);
 };
