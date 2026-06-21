@@ -23,29 +23,9 @@ void World::update(float fDeltaTime) {
   m_SystemManager.updateSystems(fDeltaTime);
 }
 
-// Component managment methods
+// Component management methods are templates defined inline in World.h.
 
-template<typename T>
-void World::addComponent(EntityID entity, const T& component) {
-  m_ComponentManager.addComponent<T>(Entity, component);
-}
-
-template<typename T>
-void World::removeComponent(EntityID entity) {
-  m_ComponentManager.removeComponent<T>(entity);
-}
-
-template<typename T>
-T& World::getComponent(EntityID entity) {
-  return m_ComponentManager.getComponent<T>(entity);
-}
-
-template<typename T>
-bool World::hasComponent(EntityID entity) {
-  return m_ComponentManager.hasComponent<T>(entity);
-}
-
-//System argument systems 
+//System argument systems
 
 void World::registerSystem(System* system) {
   m_SystemManager.registerSystem(system);

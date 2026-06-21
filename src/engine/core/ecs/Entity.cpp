@@ -16,10 +16,9 @@ EntityManager::EntityManager() : m_NextEntityID(1) {
 EntityID EntityManager::createEntity() {
   EntityID id;
   if(!m_FreeEntities.empty()) {
-    // Reuse a freed entity ID
+    // Reuse a freed entity ID. Fall through so it gets marked active below.
     id = m_FreeEntities.back();
     m_FreeEntities.pop_back();
-    return id;
   } else {
     // Create a new entity ID
     id = m_NextEntityID++;
