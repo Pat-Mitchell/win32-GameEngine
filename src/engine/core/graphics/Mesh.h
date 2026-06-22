@@ -9,7 +9,7 @@
 struct Vertex {
   Vec3 position;
   Vec3 normal;
-  Vec3 texCoord;
+  Vec2 texCoord;
 };
 
 class Mesh {

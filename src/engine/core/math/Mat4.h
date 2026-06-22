@@ -5,7 +5,7 @@
 // Example:
 //   Mat4 mvp = projection * view * model;
 //   glUniformMatrix4fv(mvpLocation, 1, GL_TRUE, &mvp.m[0][0]);
-//                                      ^^^^^^^ transpose on, because your Mat4 is row-major
+//                                      ^^^^^^^ transpose on, because Mat4 is row-major
 
 #pragma once
 

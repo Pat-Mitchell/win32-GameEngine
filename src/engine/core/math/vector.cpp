@@ -1,8 +1,94 @@
 /// @file vector.cpp
-/// @brief Structs for vec3 and vec4. 
+/// @brief Structs for vec2, vec3 and vec4.
 
 #include "vector.h"
 #include <cmath>
+
+// ────── ⋆⋅☆⋅⋆ ────────
+//        Vec2
+// ────── ⋆⋅☆⋅⋆ ────────
+
+// Vector addition
+Vec2 Vec2::operator+(const Vec2& other) const {
+  return Vec2(x + other.x, y + other.y);
+}
+
+// Vector subtraction
+Vec2 Vec2::operator-(const Vec2& other) const {
+  return Vec2(x - other.x, y - other.y);
+}
+
+// Scalar multiplication
+Vec2 Vec2::operator*(float scalar) const {
+  return Vec2(x * scalar, y * scalar);
+}
+
+// Scalar division
+Vec2 Vec2::operator/(float scalar) const {
+  if(scalar != 0.0f) {
+    return Vec2(x / scalar, y / scalar);
+  }
+  return Vec2(0.0f, 0.0f);
+}
+
+// Vector addition assignment
+Vec2& Vec2::operator+=(const Vec2& other) {
+  x += other.x;
+  y += other.y;
+  return *this;
+}
+
+// Scalar division assignment
+Vec2& Vec2::operator/=(float scalar) {
+  if(scalar != 0.0f) {
+    x /= scalar;
+    y /= scalar;
+  }
+  return *this;
+}
+
+// Equivalence
+bool Vec2::operator==(const Vec2& other) const {
+  if(other.x == x && other.y == y) return true;
+  return false;
+}
+
+// Dot product
+float Vec2::dot(const Vec2& other) const {
+  return x * other.x + y * other.y;
+}
+
+// Vector length
+float Vec2::length() const {
+  return std::sqrt(x * x + y * y);
+}
+
+// Normalize vector
+void Vec2::normalize() {
+  float len = length();
+  if(len > 0.0f) {
+    x /= len;
+    y /= len;
+  } else {
+    x = 0.0f;
+    y = 0.0f;
+  }
+}
+
+Vec2 Vec2::normalized() const {
+  float len = length();
+  if(len > 0.0f) {
+    return Vec2(x / len, y / len);
+  }
+  return Vec2(0.0f, 0.0f);
+}
+
+// Distance between two vectors
+float Vec2::distance(const Vec2& other) const {
+  float dx = x - other.x;
+  float dy = y - other.y;
+  return std::sqrt(dx * dx + dy * dy);
+}
 
 // ────── ⋆⋅☆⋅⋆ ────────
 //        Vec3
