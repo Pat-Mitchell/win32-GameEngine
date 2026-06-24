@@ -9,7 +9,7 @@
 #include "../../src/engine/core/ecs/World.h"
 
 // ────── ⋆⋅☆⋅⋆ ────────
-// --- Tiny CHECK harness ---
+//  Tiny CHECK harness
 // ────── ⋆⋅☆⋅⋆ ────────
 
 static int g_checks = 0;
@@ -29,7 +29,7 @@ static void section(const char* name) {
 }
 
 // ────── ⋆⋅☆⋅⋆ ────────
-//       Test fixtures 
+//    Test fixtures 
 // ────── ⋆⋅☆⋅⋆ ────────
 
 struct Position { float x, y, z; };
@@ -63,7 +63,7 @@ class MovementSystem : public System {
 };
 
 // ────── ⋆⋅☆⋅⋆ ────────
-//          Tests 
+//        Tests 
 // ────── ⋆⋅☆⋅⋆ ────────
 
 static void testEntityLifecycle(World& world) {
@@ -194,7 +194,7 @@ static void testReset() {
 }
 
 // ────── ⋆⋅☆⋅⋆ ────────
-//       Entry point 
+//     Entry point 
 // ────── ⋆⋅☆⋅⋆ ────────
 
 int main() {

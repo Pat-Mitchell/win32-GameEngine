@@ -6,6 +6,7 @@
 #include <vector>
 #include "Shader.h"
 #include "Mesh.h"
+#include "Camera.h"
 #include "..\math\vector.h"
 
 class Shader;
@@ -27,6 +28,12 @@ class Renderer {
     void enableDepthTest(bool enable);
     void enableCulling(bool enable);
 
+    // Handle window resizing
+    void resize(int width, int height);
+
+    Camera& getCamera() { return camera; }
+
   private:
     bool m_bInitialized;
+    Camera camera;
 };

@@ -7,7 +7,7 @@ set GLFW_INC=K:\glfw-3.4.bin.WIN64\include
 set GLFW_LIB=K:\glfw-3.4.bin.WIN64\lib-mingw-w64
 set SRC=..\..\src\engine\core
 
-echo === Building CPU smoke test (no GL context needed) ===
+echo === Building CPU smoke test (no GL context) ===
 g++ -std=gnu++17 -g graphics_cpu_smoke_test.cpp ^
   %SRC%\graphics\Mesh.cpp ^
   %SRC%\math\vector.cpp ^
@@ -27,7 +27,9 @@ g++ -std=gnu++17 -g graphics_gl_smoke_test.cpp ^
   %SRC%\graphics\Renderer.cpp ^
   %SRC%\graphics\Shader.cpp ^
   %SRC%\graphics\Mesh.cpp ^
+  %SRC%\graphics\Camera.cpp ^
   %SRC%\math\vector.cpp ^
+  %SRC%\math\Mat4.cpp ^
   -I "%GLFW_INC%" -L "%GLFW_LIB%" ^
   -lglew32 -lglfw3 -lopengl32 -lgdi32 ^
   -o graphics_gl_smoke_test.exe

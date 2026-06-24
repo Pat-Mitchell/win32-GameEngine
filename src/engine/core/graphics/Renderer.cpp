@@ -79,3 +79,8 @@ void Renderer::enableCulling(bool enable) {
     glDisable(GL_CULL_FACE);
   }
 }
+
+void Renderer::resize(int width, int height) {
+  glViewport(0, 0, width, height);
+  camera.setAspect((float)width / (float)height);
+}
