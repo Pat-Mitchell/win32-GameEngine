@@ -16,6 +16,8 @@ class EntityManager {
     bool isValid(EntityID entity) const;
     void reset();
 
+    std::vector<bool> getEntityRegistry() const { return m_EntityRegistry; };
+
   private:
     std::vector<bool> m_EntityRegistry;
     std::vector<EntityID> m_FreeEntities;

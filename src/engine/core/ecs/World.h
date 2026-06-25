@@ -6,12 +6,16 @@
 #include "Component.h"
 #include "System.h"
 
+#include <vector>
+
 class World {
   public:
     World();
     EntityID createEntity();
     void destroyEntity(EntityID entity);
     void update(float fDeltaTime);
+
+    std::vector<EntityID> getActiveEntities() const;
 
     // Defined in the header: these are templates, so their bodies must be
     //    visible to every translation unit that instantiates them.

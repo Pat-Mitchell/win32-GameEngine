@@ -45,3 +45,13 @@ void World::reset() {
   m_EntityManager.reset();
   m_SystemManager = SystemManager();
 }
+
+std::vector<EntityID> World::getActiveEntities() const {
+  std::vector<EntityID> active;
+
+  for(size_t i = 1; i < m_EntityManager.getEntityRegistry().size(); i++) {
+    if(m_EntityManager.isValid(static_cast<EntityID>(i))) {
+      active.push_back(static_cast<EntityID>(i));
+    }
+  }
+}
