@@ -130,6 +130,9 @@ class ComponentManager {
     // .cpp because it is not templated.
     void entityDestroyed(EntityID entity);
 
+    // Drop all component arrays, returning the manager to its empty state.
+    void reset();
+
   private:
     static ComponentType m_NextComponentType;
     std::unordered_map<ComponentType, std::shared_ptr<IComponentArray>> m_ComponentArrays;

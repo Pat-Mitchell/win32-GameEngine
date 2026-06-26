@@ -21,3 +21,10 @@ void ComponentManager::entityDestroyed(EntityID entity) {
     pair.second->entityDestroyed(entity);
   }
 }
+
+void ComponentManager::reset() {
+  // Releasing the shared_ptrs destroys every ComponentArray and all the
+  // component data they hold. m_NextComponentType is intentionally left
+  // alone: type ids are process-global and stay stable across resets.
+  m_ComponentArrays.clear();
+}

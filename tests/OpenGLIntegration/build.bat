@@ -6,4 +6,4 @@ if %errorlevel% == 0(
 ) else (
   echo Compilation failed!
 )
-pause
+PAUSE

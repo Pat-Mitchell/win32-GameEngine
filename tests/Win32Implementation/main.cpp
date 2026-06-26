@@ -10,6 +10,60 @@
 World* g_pWorld = nullptr;
 Renderer* g_pRenderer = nullptr;
 
+// OpenGL context state
+HDC g_hDC = nullptr;     // device context for the window
+HGLRC g_hRC = nullptr;   // OpenGL rendering context
+
+// Create a double-buffered, depth-enabled OpenGL context and make it current.
+// Must run before Renderer::initialize(), since glewInit() needs a live context.
+bool createGLContext(HWND hwnd) {
+  g_hDC = GetDC(hwnd);
+  if(g_hDC == nullptr) {
+    return false;
+  }
+
+  PIXELFORMATDESCRIPTOR pfd = {};
+  pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+  pfd.nVersion = 1;
+  pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+  pfd.iPixelType = PFD_TYPE_RGBA;
+  pfd.cColorBits = 32;
+  pfd.cDepthBits = 24; // depth buffer so the cube's faces sort correctly
+  pfd.cStencilBits = 8;
+  pfd.iLayerType = PFD_MAIN_PLANE;
+
+  int pixelFormat = ChoosePixelFormat(g_hDC, &pfd);
+  if(pixelFormat == 0) {
+    return false;
+  }
+  if(!SetPixelFormat(g_hDC, pixelFormat, &pfd)) {
+    return false;
+  }
+
+  g_hRC = wglCreateContext(g_hDC);
+  if(g_hRC == nullptr) {
+    return false;
+  }
+  if(!wglMakeCurrent(g_hDC, g_hRC)) {
+    return false;
+  }
+
+  return true;
+}
+
+// Tear down the OpenGL context. Safe to call even if creation failed partway.
+void destroyGLContext(HWND hwnd) {
+  wglMakeCurrent(nullptr, nullptr);
+  if(g_hRC != nullptr) {
+    wglDeleteContext(g_hRC);
+    g_hRC = nullptr;
+  }
+  if(g_hDC != nullptr) {
+    ReleaseDC(hwnd, g_hDC);
+    g_hDC = nullptr;
+  }
+}
+
 // Window proc function
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   switch(uMsg) {
@@ -62,11 +116,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   ShowWindow(hwnd, nCmdShow);
   UpdateWindow(hwnd);
 
+  // Bring up the OpenGL context before anything touches GL.
+  if(!createGLContext(hwnd)) {
+    MessageBox(hwnd, L"Failed to create OpenGL context", L"Error", MB_OK | MB_ICONERROR);
+    return -1;
+  }
+
   // Initialize engine components
   g_pWorld = new World();
   g_pRenderer = new Renderer();
 
   if(!g_pRenderer->initialize()) {
+    MessageBox(hwnd, L"Renderer initialization failed", L"Error", MB_OK | MB_ICONERROR);
+    destroyGLContext(hwnd);
     return -1;
   }
 
@@ -80,6 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   // Cleanup
   delete g_pWorld;
   delete g_pRenderer;
+  destroyGLContext(hwnd);
 
   return 0;
 }

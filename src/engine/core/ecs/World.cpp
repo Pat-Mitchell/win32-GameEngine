@@ -43,15 +43,19 @@ bool World::isValid(EntityID entity) const {
 
 void World::reset() {
   m_EntityManager.reset();
+  m_ComponentManager.reset();
   m_SystemManager = SystemManager();
 }
 
 std::vector<EntityID> World::getActiveEntities() const {
   std::vector<EntityID> active;
 
-  for(size_t i = 1; i < m_EntityManager.getEntityRegistry().size(); i++) {
+  const std::vector<bool>& registry = m_EntityManager.getEntityRegistry();
+  for(size_t i = 1; i < registry.size(); i++) {
     if(m_EntityManager.isValid(static_cast<EntityID>(i))) {
       active.push_back(static_cast<EntityID>(i));
     }
   }
+
+  return active;
 }
