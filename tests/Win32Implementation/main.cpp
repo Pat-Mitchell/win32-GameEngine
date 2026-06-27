@@ -70,9 +70,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     case WM_DESTROY:
       PostQuitMessage(0);
       return 0;
+    case WM_SIZE: {
+      // Keep the GL viewport (and camera aspect) in sync with the client area.
+      if(g_pRenderer != nullptr) {
+        int width = LOWORD(lParam);
+        int height = HIWORD(lParam);
+        if(width > 0 && height > 0) {
+          g_pRenderer->resize(width, height);
+        }
+      }
+      return 0;
+    }
     case WM_PAINT: {
+      // GL drives all drawing from the render loop; just validate the region
+      // so Windows stops sending WM_PAINT.
       PAINTSTRUCT ps;
-      HDC hdc = BeginPaint(hwnd, &ps);
+      BeginPaint(hwnd, &ps);
       EndPaint(hwnd, &ps);
       return 0;
     }
@@ -90,7 +103,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   wc.hInstance = hInstance;
   wc.lpszClassName = CLASS_NAME;
   wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-  wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+  // wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1) // PAINTs the window default white. Blocking out so GL has control over PAINT instead of GDI
+  // No GDI background brush: OpenGL owns the surface and clears it every frame.
+  // Leaving this as COLOR_WINDOW would let GDI erase the client area to white,
+  // causing a flash on resize before GL paints over it.
+  wc.hbrBackground = NULL;
 
   RegisterClassEx(&wc);
 
@@ -132,11 +149,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     return -1;
   }
 
-  // Main message loop
+  // Set the initial viewport to match the window's client area.
+  RECT clientRect;
+  GetClientRect(hwnd, &clientRect);
+  g_pRenderer->resize(clientRect.right - clientRect.left,
+                      clientRect.bottom - clientRect.top);
+
+  // Main loop: drain pending messages, then render one frame. Unlike GetMessage
+  // (which blocks until a message arrives), PeekMessage returns immediately so we
+  // keep redrawing every iteration.
   MSG msg = {};
-  while(GetMessage(&msg, NULL, 0, 0)) {
-    TranslateMessage(&msg);
-    DispatchMessage(&msg);
+  bool running = true;
+  while(running) {
+    while(PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+      if(msg.message == WM_QUIT) {
+        running = false;
+        break;
+      }
+      TranslateMessage(&msg);
+      DispatchMessage(&msg);
+    }
+
+    // Render one frame: clear to the background color, then present.
+    // The cube draw will slot in between these two calls in the next step.
+    g_pRenderer->clear(Vec3(0.1f, 0.1f, 0.15f));
+    SwapBuffers(g_hDC);
   }
 
   // Cleanup
