@@ -9,6 +9,7 @@
 // Global instances
 World* g_pWorld = nullptr;
 Renderer* g_pRenderer = nullptr;
+Mesh* g_pCubeMesh = nullptr; // Test cube mesh
 
 // OpenGL context state
 HDC g_hDC = nullptr;     // device context for the window
@@ -93,6 +94,104 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+// Build unit cube centered on the origin with flat shading and upload it to the GPU.
+// 24 vertices: 4 per face so each face carries its own flat normal and full 0..1 UVs.
+// Each face is wound counter-clockwise as seen from outside, matching the renderer's
+// GL_CCW front-face + back-face culling so interior faces are discarded.
+// Must be called after the GL context exists (initialize()/uploadData() issue GL calls).
+Mesh* createCubeMesh() {
+  Mesh* mesh = new Mesh();
+
+  // Per-face data: 4 corner positions (CCW from outside) + the shared face normal.
+  // UVs are assigned per-corner below as (0,0)(1,0)(1,1)(0,1).
+  struct Face { Vec3 normal; Vec3 corners[4]; };
+  const Face faces[6] = {
+    // Front (+Z)
+    { 
+      Vec3( 0,  0,  1), // Normal
+      { 
+        Vec3(-0.5f,-0.5f, 0.5f), 
+        Vec3( 0.5f,-0.5f, 0.5f), 
+        Vec3( 0.5f, 0.5f, 0.5f), 
+        Vec3(-0.5f, 0.5f, 0.5f)
+      } 
+    },
+    // Back (-Z)
+    { 
+      Vec3( 0,  0, -1), // Normal
+      { 
+        Vec3( 0.5f,-0.5f,-0.5f), 
+        Vec3(-0.5f,-0.5f,-0.5f), 
+        Vec3(-0.5f, 0.5f,-0.5f),
+        Vec3( 0.5f, 0.5f,-0.5f) 
+      } 
+    },
+    // Left (-X)
+    { 
+      Vec3(-1,  0,  0), // Normal
+      { 
+        Vec3(-0.5f,-0.5f,-0.5f), 
+        Vec3(-0.5f,-0.5f, 0.5f), 
+        Vec3(-0.5f, 0.5f, 0.5f), 
+        Vec3(-0.5f, 0.5f,-0.5f) 
+      } 
+    },
+    // Right (+X)
+    { 
+      Vec3( 1,  0,  0), // Normal
+      { 
+        Vec3( 0.5f,-0.5f, 0.5f), 
+        Vec3( 0.5f,-0.5f,-0.5f), 
+        Vec3( 0.5f, 0.5f,-0.5f), 
+        Vec3( 0.5f, 0.5f, 0.5f) 
+      } 
+    },
+    // Top (+Y)
+    { 
+      Vec3( 0,  1,  0), // Normal
+      { Vec3(-0.5f, 0.5f, 0.5f), 
+        Vec3( 0.5f, 0.5f, 0.5f), 
+        Vec3( 0.5f, 0.5f,-0.5f), 
+        Vec3(-0.5f, 0.5f,-0.5f) 
+      } 
+    },
+    // Bottom (-Y)
+    { 
+      Vec3( 0, -1,  0), // Normal
+      { Vec3(-0.5f,-0.5f,-0.5f), 
+        Vec3( 0.5f,-0.5f,-0.5f), 
+        Vec3( 0.5f,-0.5f, 0.5f), 
+        Vec3(-0.5f,-0.5f, 0.5f) 
+      } 
+    },
+  };
+  const Vec2 uvs[4] = { Vec2(0, 0), Vec2(1, 0), Vec2(1, 1), Vec2(0, 1) };
+
+  for(int f = 0; f < 6; f++) {
+    GLuint base = static_cast<GLuint>(f * 4); // first vertex index of this face
+    for(int c = 0; c < 4; c++) {
+      Vertex v;
+      v.position = faces[f].corners[c];
+      v.normal = faces[f].normal;
+      v.texCoord = uvs[c];
+      mesh->addVertex(v);
+    }
+
+    // Two CCW triangles for the quad: (0,1,2) and (0,2,3), offset by this face's base.
+    mesh->addIndex(base + 0); 
+    mesh->addIndex(base + 1); 
+    mesh->addIndex(base + 2);
+
+    mesh->addIndex(base + 0); 
+    mesh->addIndex(base + 2); 
+    mesh->addIndex(base + 3);
+  }
+
+  mesh->initialize();  // create VAO/VBO/EBO
+  mesh->uploadData();  // push vertices/indices + set attribute pointers
+  return mesh;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   // Register window class
   const wchar_t* CLASS_NAME = L"Game Engine Window";
@@ -155,6 +254,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   g_pRenderer->resize(clientRect.right - clientRect.left,
                       clientRect.bottom - clientRect.top);
 
+  // Build the cube geometry on the GPU. Not drawn yet: drawing needs a shader
+  // and MVP uniforms. This just proves the upload path works.
+  g_pCubeMesh = createCubeMesh();
+
   // Main loop: drain pending messages, then render one frame. Unlike GetMessage
   // (which blocks until a message arrives), PeekMessage returns immediately so we
   // keep redrawing every iteration.
@@ -176,7 +279,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SwapBuffers(g_hDC);
   }
 
-  // Cleanup
+  // Cleanup. Delete the mesh before the context goes away, since its destructor
+  // calls glDeleteVertexArrays/Buffers and needs the context still current.
+  delete g_pCubeMesh;
   delete g_pWorld;
   delete g_pRenderer;
   destroyGLContext(hwnd);
