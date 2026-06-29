@@ -9,7 +9,8 @@
 // Global instances
 World* g_pWorld = nullptr;
 Renderer* g_pRenderer = nullptr;
-Mesh* g_pCubeMesh = nullptr; // Test cube mesh
+Mesh* g_pCubeMesh = nullptr;     // Test cube mesh
+Shader* g_pCubeShader = nullptr; // Shader for the test cube
 
 // OpenGL context state
 HDC g_hDC = nullptr;     // device context for the window
@@ -149,7 +150,8 @@ Mesh* createCubeMesh() {
     // Top (+Y)
     { 
       Vec3( 0,  1,  0), // Normal
-      { Vec3(-0.5f, 0.5f, 0.5f), 
+      { 
+        Vec3(-0.5f, 0.5f, 0.5f), 
         Vec3( 0.5f, 0.5f, 0.5f), 
         Vec3( 0.5f, 0.5f,-0.5f), 
         Vec3(-0.5f, 0.5f,-0.5f) 
@@ -158,7 +160,8 @@ Mesh* createCubeMesh() {
     // Bottom (-Y)
     { 
       Vec3( 0, -1,  0), // Normal
-      { Vec3(-0.5f,-0.5f,-0.5f), 
+      { 
+        Vec3(-0.5f,-0.5f,-0.5f), 
         Vec3( 0.5f,-0.5f,-0.5f), 
         Vec3( 0.5f,-0.5f, 0.5f), 
         Vec3(-0.5f,-0.5f, 0.5f) 
@@ -190,6 +193,57 @@ Mesh* createCubeMesh() {
   mesh->initialize();  // create VAO/VBO/EBO
   mesh->uploadData();  // push vertices/indices + set attribute pointers
   return mesh;
+}
+
+// Compile and link the cube's shader from inline GLSL source. Returns nullptr on
+// failure. Must be called after the GL context exists (compilation issues GL calls).
+//
+// Vertex shader: transforms each vertex by a single combined MVP matrix (uMVP) and
+// passes the normal through. The attribute layout locations (0/1/2) match the order
+// Mesh::uploadData() sets up (position/normal/texCoord).
+//
+// Fragment shader: a cheap directional shade so adjacent faces differ in brightness,
+// otherwise a solid-color cube reads as a flat silhouette once it's on screen.
+Shader* createCubeShader() {
+  const std::string vertexSource = R"glsl(
+    #version 330 core
+    layout(location = 0) in vec3 aPos;
+    layout(location = 1) in vec3 aNormal;
+    layout(location = 2) in vec2 aTexCoord;
+
+    uniform mat4 uMVP;
+
+    out vec3 vNormal;
+
+    void main() {
+      gl_Position = uMVP * vec4(aPos, 1.0);
+      vNormal = aNormal;
+    }
+  )glsl";
+
+  const std::string fragmentSource = R"glsl(
+    #version 330 core
+    in vec3 vNormal;
+
+    out vec4 FragColor;
+
+    void main() {
+      vec3 n = normalize(vNormal);
+      vec3 lightDir = normalize(vec3(0.5, 1.0, 0.3));
+      float diff = max(dot(n, lightDir), 0.0);
+      vec3 base = vec3(0.6, 0.7, 0.9);
+      // Ambient term keeps unlit faces visible; diffuse separates the faces.
+      vec3 color = base * (0.3 + 0.7 * diff);
+      FragColor = vec4(color, 1.0);
+    }
+  )glsl";
+
+  Shader* shader = new Shader();
+  if(!shader->loadFromSource(vertexSource, fragmentSource)) {
+    delete shader;
+    return nullptr;
+  }
+  return shader;
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -254,9 +308,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   g_pRenderer->resize(clientRect.right - clientRect.left,
                       clientRect.bottom - clientRect.top);
 
-  // Build the cube geometry on the GPU. Not drawn yet: drawing needs a shader
-  // and MVP uniforms. This just proves the upload path works.
+  // Build the cube geometry on the GPU. Not drawn yet: drawing needs MVP uniforms.
   g_pCubeMesh = createCubeMesh();
+
+  // Compile the cube's shader. Not used in the draw yet (Step 5 feeds it the MVP);
+  // this proves the inline GLSL compiles and links against the live context.
+  g_pCubeShader = createCubeShader();
+  if(g_pCubeShader == nullptr) {
+    MessageBox(hwnd, L"Cube shader failed to compile/link", L"Error", MB_OK | MB_ICONERROR);
+    delete g_pCubeMesh;
+    destroyGLContext(hwnd);
+    return -1;
+  }
 
   // Main loop: drain pending messages, then render one frame. Unlike GetMessage
   // (which blocks until a message arrives), PeekMessage returns immediately so we
@@ -279,8 +342,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SwapBuffers(g_hDC);
   }
 
-  // Cleanup. Delete the mesh before the context goes away, since its destructor
-  // calls glDeleteVertexArrays/Buffers and needs the context still current.
+  // Cleanup. Delete GPU objects before the context goes away, since their
+  // destructors call glDelete* and need the context still current.
+  delete g_pCubeShader;
   delete g_pCubeMesh;
   delete g_pWorld;
   delete g_pRenderer;
