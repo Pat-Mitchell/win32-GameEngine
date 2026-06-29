@@ -336,9 +336,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       DispatchMessage(&msg);
     }
 
-    // Render one frame: clear to the background color, then present.
-    // The cube draw will slot in between these two calls in the next step.
+    // Render one frame: clear, draw the rotating cube, then present.
     g_pRenderer->clear(Vec3(0.1f, 0.1f, 0.15f));
+
+    // Model: spin the cube on two axes over time so every face comes into view.
+    float t = (float)GetTickCount64() / 1000.0f; // seconds since boot
+    Mat4 model = Mat4::rotateY(t * 0.5f) * Mat4::rotateX(t * 0.15f);
+
+    // View/projection come from the renderer's camera (default: at +Z looking at
+    // the origin; aspect is kept current by resize()).
+    Camera& camera = g_pRenderer->getCamera();
+    Mat4 mvp = camera.getProjectionMatrix() * camera.getViewMatrix() * model;
+
+    // The program must be active before glUniform* writes to it, so use() first,
+    // then upload the MVP. setUniformMatrix4fv passes GL_TRUE internally to handle
+    // Mat4's row-major storage. render() calls use() again (harmless) and draws.
+    g_pCubeShader->use();
+    g_pCubeShader->setUniformMatrix4fv("uMVP", &mvp.m[0][0]);
+    g_pRenderer->render(*g_pCubeMesh, *g_pCubeShader);
+
     SwapBuffers(g_hDC);
   }
 
