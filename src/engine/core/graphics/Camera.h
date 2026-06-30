@@ -15,6 +15,10 @@ class Camera {
     Mat4 getViewMatrix() const { return viewMatrix; }
     Mat4 getProjectionMatrix() const { return projectionMatrix; }
 
+    // Read-only state for input-driven movement (fly camera, etc.).
+    Vec3 getPosition() const { return position; }
+    Vec3 getFront() const { return front; }
+
     void setPosition(Vec3 pos);
     void setRotation(float pitch, float yaw);
     void setProjection(float fov, float aspect, float near, float far);

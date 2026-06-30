@@ -1,0 +1,28 @@
+# Unit cube centered on the origin, exported as quads with per-face normals.
+# Used to exercise the OBJ loader (quad triangulation + v//vn parsing).
+v -0.5 -0.5  0.5
+v  0.5 -0.5  0.5
+v  0.5  0.5  0.5
+v -0.5  0.5  0.5
+v -0.5 -0.5 -0.5
+v  0.5 -0.5 -0.5
+v  0.5  0.5 -0.5
+v -0.5  0.5 -0.5
+vn  0.0  0.0  1.0
+vn  0.0  0.0 -1.0
+vn -1.0  0.0  0.0
+vn  1.0  0.0  0.0
+vn  0.0  1.0  0.0
+vn  0.0 -1.0  0.0
+# front (+Z)
+f 1//1 2//1 3//1 4//1
+# back (-Z)
+f 6//2 5//2 8//2 7//2
+# left (-X)
+f 5//3 1//3 4//3 8//3
+# right (+X)
+f 2//4 6//4 7//4 3//4
+# top (+Y)
+f 4//5 3//5 7//5 8//5
+# bottom (-Y)
+f 5//6 6//6 2//6 1//6

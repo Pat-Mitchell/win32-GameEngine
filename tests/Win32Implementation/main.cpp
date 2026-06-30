@@ -3,14 +3,29 @@
 ///   Implementation of the ECS and graphics systems into a win32 app
 
 #include <windows.h>
+#include <windowsx.h> // GET_X_LPARAM / GET_Y_LPARAM (signed mouse coords)
 #include "../../src/engine/core/ecs/World.h"
 #include "../../src/engine/core/graphics/Renderer.h"
+#include "../../src/engine/core/loaders/ObjLoader.h"
+#include "../../src/engine/core/input/Keyboard.h"
+#include "../../src/engine/core/input/Mouse.h"
 
 // Global instances
 World* g_pWorld = nullptr;
 Renderer* g_pRenderer = nullptr;
 Mesh* g_pCubeMesh = nullptr;     // Test cube mesh
 Shader* g_pCubeShader = nullptr; // Shader for the test cube
+
+// Input devices: WindowProc feeds them events; the render loop polls them.
+Keyboard g_keyboard;
+Mouse g_mouse;
+
+// Fly-camera state driven by the input devices. g_cameraPos mirrors the Camera's
+// position. g_yaw/g_pitch accumulate from mouse-look.
+// Pitch=yaw=0 looks down -Z, matching the Camera's defaults.
+Vec3 g_cameraPos(0.0f, 0.0f, 3.0f);
+float g_yaw = 0.0f;
+float g_pitch = 0.0f;
 
 // OpenGL context state
 HDC g_hDC = nullptr;     // device context for the window
@@ -71,6 +86,36 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
   switch(uMsg) {
     case WM_DESTROY:
       PostQuitMessage(0);
+      return 0;
+    case WM_KEYDOWN:
+      g_keyboard.onKeyDown((int)wParam);
+      if(wParam == VK_ESCAPE) {
+        PostQuitMessage(0);
+      }
+      return 0;
+    case WM_KEYUP:
+      g_keyboard.onKeyUp((int)wParam);
+      return 0;
+    case WM_KILLFOCUS:
+      // Lost focus: clear held keys so they don't stay "stuck" down.
+      g_keyboard.reset();
+      return 0;
+    case WM_RBUTTONDOWN:
+      g_mouse.onButtonDown(Mouse::Right);
+      SetCapture(hwnd); // keep receiving moves if the cursor leaves the window
+      return 0;
+    case WM_RBUTTONUP:
+      g_mouse.onButtonUp(Mouse::Right);
+      ReleaseCapture();
+      return 0;
+    case WM_LBUTTONDOWN:
+      g_mouse.onButtonDown(Mouse::Left);
+      return 0;
+    case WM_LBUTTONUP:
+      g_mouse.onButtonUp(Mouse::Left);
+      return 0;
+    case WM_MOUSEMOVE:
+      g_mouse.onMove(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
       return 0;
     case WM_SIZE: {
       // Keep the GL viewport (and camera aspect) in sync with the client area.
@@ -308,8 +353,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   g_pRenderer->resize(clientRect.right - clientRect.left,
                       clientRect.bottom - clientRect.top);
 
-  // Build the cube geometry on the GPU. Not drawn yet: drawing needs MVP uniforms.
-  g_pCubeMesh = createCubeMesh();
+  // Load the test model from disk. Fall back to the procedural cube if the file
+  // is missing so the app still runs.
+  g_pCubeMesh = new Mesh();
+  if(loadOBJ("cube.obj", *g_pCubeMesh)) {
+    g_pCubeMesh->initialize();  // create VAO/VBO/EBO
+    g_pCubeMesh->uploadData();  // push vertices/indices + set attribute pointers
+  } else {
+    delete g_pCubeMesh;
+    g_pCubeMesh = createCubeMesh();
+  }
 
   // Compile the cube's shader. Not used in the draw yet (Step 5 feeds it the MVP);
   // this proves the inline GLSL compiles and links against the live context.
@@ -336,16 +389,47 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       DispatchMessage(&msg);
     }
 
-    // Render one frame: clear, draw the rotating cube, then present.
+    // Per-frame timing
+    // Movement is frame-rate independent
+    static ULONGLONG s_lastTick = GetTickCount64();
+    ULONGLONG nowTick = GetTickCount64();
+    float dt = (float)(nowTick - s_lastTick) / 1000.0f;
+    s_lastTick = nowTick;
+
+    Camera& camera = g_pRenderer->getCamera();
+
+    // Mouse-look: 
+    // turn the camera while the right button is held
+    if(g_mouse.isButtonDown(Mouse::Right)) {
+      const float sensitivity = 0.15f;
+      g_yaw += g_mouse.getDeltaX() * sensitivity;
+      g_pitch -= g_mouse.getDeltaY() * sensitivity; // screen-down -> look down
+      if(g_pitch > 89.0f) g_pitch = 89.0f;
+      if(g_pitch < -89.0f) g_pitch = -89.0f;
+      camera.setRotation(g_pitch, g_yaw);
+    }
+    g_mouse.consumeDelta(); // reset accumulated motion for the next frame
+
+    // Keyboard fly movement
+    // (WASD + Q/E up/down), relative to where we look
+    Vec3 front = camera.getFront();
+    Vec3 worldUp(0.0f, 1.0f, 0.0f);
+    Vec3 rightDir = front.cross(worldUp).normalized();
+    float moveSpeed = 3.0f * dt; // units per second
+    if(g_keyboard.isKeyDown('W')) g_cameraPos += front * moveSpeed;
+    if(g_keyboard.isKeyDown('S')) g_cameraPos += front * (-moveSpeed);
+    if(g_keyboard.isKeyDown('D')) g_cameraPos += rightDir * moveSpeed;
+    if(g_keyboard.isKeyDown('A')) g_cameraPos += rightDir * (-moveSpeed);
+    if(g_keyboard.isKeyDown('E')) g_cameraPos += worldUp * moveSpeed;
+    if(g_keyboard.isKeyDown('Q')) g_cameraPos += worldUp * (-moveSpeed);
+    camera.setPosition(g_cameraPos);
+
+    // Render one frame: clear, draw the spinning model, then present
     g_pRenderer->clear(Vec3(0.1f, 0.1f, 0.15f));
 
-    // Model: spin the cube on two axes over time so every face comes into view.
+    // Model: spin on two axes over time so every face comes into view.
     float t = (float)GetTickCount64() / 1000.0f; // seconds since boot
-    Mat4 model = Mat4::rotateY(t * 0.5f) * Mat4::rotateX(t * 0.15f);
-
-    // View/projection come from the renderer's camera (default: at +Z looking at
-    // the origin; aspect is kept current by resize()).
-    Camera& camera = g_pRenderer->getCamera();
+    Mat4 model = Mat4::rotateY(t * 2.5f) * Mat4::rotateX(t * 1.15f);
     Mat4 mvp = camera.getProjectionMatrix() * camera.getViewMatrix() * model;
 
     // The program must be active before glUniform* writes to it, so use() first,
