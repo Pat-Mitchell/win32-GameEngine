@@ -106,6 +106,18 @@ Shader* createCubeShader() {
   return shader;
 }
 
+// Enforce the Mouse's cursor-lock intent with the OS calls that need a cursor.
+// The ClipCursor confinement and per-frame recentre live in the main loop (so
+// they survive window move/resize). Flip cursor visibility.
+static void applyCursorLock(bool locked) {
+  if(locked) {
+    while(ShowCursor(FALSE) >= 0) {} // hide (decrements an internal show-counter)
+  } else {
+    ClipCursor(nullptr);             // release confinement
+    while(ShowCursor(TRUE) < 0) {}   // restore the cursor
+  }
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   switch(uMsg) {
     case WM_DESTROY:
@@ -114,12 +126,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     case WM_KEYDOWN:
       g_keyboard.onKeyDown((int)wParam);
       if(wParam == VK_ESCAPE) PostQuitMessage(0);
+      // Tab toggles mouse-look. Ignore auto-repeat (bit 30 = key was already down)
+      // so holding Tab doesn't flicker the lock on and off.
+      if(wParam == VK_TAB && !(lParam & 0x40000000)) {
+        g_mouse.toggleLock();
+        applyCursorLock(g_mouse.isLocked());
+      }
       return 0;
     case WM_KEYUP:
       g_keyboard.onKeyUp((int)wParam);
       return 0;
     case WM_KILLFOCUS:
       g_keyboard.reset(); // clear held keys so they don't stay stuck
+      if(g_mouse.isLocked()) { // release the cursor so Alt-Tab etc. work
+        g_mouse.setLocked(false);
+        applyCursorLock(false);
+      }
       return 0;
     case WM_RBUTTONDOWN:
       g_mouse.onButtonDown(Mouse::Right);
@@ -283,8 +305,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     g_pRenderer->clear(Vec3(0.1f, 0.1f, 0.15f));
     g_pWorld->update(dt); // InputSystem moves the camera, RenderSystem draws entities
+
+    // Cursor lock: confine to the window and snap back to center each frame so
+    // look rotation is unbounded. update() already consumed this frame's delta.
+    // ignoreNextMove() stops the warp below from
+    // registering as motion. Recomputed every frame so it survives move/resize.
+    if(g_mouse.isLocked()) {
+      RECT rc;
+      GetClientRect(hwnd, &rc);
+      POINT tl{ rc.left, rc.top }, br{ rc.right, rc.bottom };
+      ClientToScreen(hwnd, &tl);
+      ClientToScreen(hwnd, &br);
+      RECT clip{ tl.x, tl.y, br.x, br.y };
+      ClipCursor(&clip);
+      g_mouse.ignoreNextMove();
+      SetCursorPos((tl.x + br.x) / 2, (tl.y + br.y) / 2);
+    }
+
     SwapBuffers(g_hDC);
   }
+
+  // Release the cursor in case we quit while locked (otherwise it stays hidden).
+  applyCursorLock(false);
 
   // Cleanup. Delete GPU objects before the context goes away (their destructors
   // call glDelete*). The systems are stack objects; they outlive this block.

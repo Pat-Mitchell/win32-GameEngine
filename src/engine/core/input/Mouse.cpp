@@ -37,3 +37,16 @@ void Mouse::consumeDelta() {
   m_DeltaX = 0.0f;
   m_DeltaY = 0.0f;
 }
+
+void Mouse::setLocked(bool locked) {
+  m_Locked = locked;
+  // Drop accumulated motion and re-seed the origin on the next move, so neither
+  // the toggle itself nor a window-layer recenter warp produces a spurious jump.
+  m_DeltaX = 0.0f;
+  m_DeltaY = 0.0f;
+  m_HasLast = false;
+}
+
+void Mouse::toggleLock() {
+  setLocked(!m_Locked);
+}

@@ -29,6 +29,19 @@ class Mouse {
     int getX() const { return m_X; }
     int getY() const { return m_Y; }
 
+    // Cursor-lock intent for mouse-look. Mouse only records the desired state.
+    // the window layer reads isLocked() and performs the OS-level work
+    // (ClipCursor/ShowCursor/recenter), the same split already used for
+    // SetCapture(). Toggling clears motion tracking so neither the toggle nor a
+    // recenter warp surfaces a spurious jump on the next frame.
+    void setLocked(bool locked);
+    void toggleLock();
+    bool isLocked() const { return m_Locked; }
+
+    // Treat the next onMove() as a teleport (e.g. a recenter warp): re-seed the
+    // origin from it instead of producing motion, so the warp adds no false delta.
+    void ignoreNextMove() { m_HasLast = false; }
+
   private:
     int m_X = 0;
     int m_Y = 0;
@@ -36,4 +49,5 @@ class Mouse {
     float m_DeltaY = 0.0f;
     bool m_Buttons[BUTTON_COUNT] = {};
     bool m_HasLast = false; // false until the first move, to avoid a huge delta
+    bool m_Locked = false;  // window layer enforces; this is just the intent
 };

@@ -20,8 +20,8 @@ void InputSystem::update(float fDeltaTime) {
   }
   Transform& t = m_World.getComponent<Transform>(m_CameraEntity);
 
-  // Mouse-look while the right button is held
-  if(m_Mouse.isButtonDown(Mouse::Right)) {
+  // Mouse-look while the cursor is locked (Tab toggle) or the right button is held.
+  if(m_Mouse.isLocked() || m_Mouse.isButtonDown(Mouse::Right)) {
     m_Yaw += m_Mouse.getDeltaX() * m_Sensitivity;
     m_Pitch -= m_Mouse.getDeltaY() * m_Sensitivity; // screen-down -> look down
     if(m_Pitch > 89.0f) m_Pitch = 89.0f;
