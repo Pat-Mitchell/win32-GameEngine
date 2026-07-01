@@ -38,16 +38,14 @@ class Mouse {
     void toggleLock();
     bool isLocked() const { return m_Locked; }
 
-    // Treat the next onMove() as a teleport (e.g. a recenter warp): re-seed the
-    // origin from it instead of producing motion, so the warp adds no false delta.
-    void ignoreNextMove() { m_HasLast = false; }
-
     // Anchor the "last known position" to a specific point, in the same client
     // coordinate space onMove() receives. Use after a recenter warp: set this to
     // the warp target (window center) so the recenter itself yields zero delta
-    // while real motion after it is still measured. Unlike ignoreNextMove(), this
-    // survives WM_MOUSEMOVE coalescing -- Windows keeps only the latest move in
-    // the queue, so the "next" move is the user's real motion, not the warp.
+    // while real motion after it is still measured. Anchoring to a known point
+    // (rather than just dropping the origin) survives WM_MOUSEMOVE coalescing --
+    // Windows keeps only the latest move in the queue, so the surviving move may
+    // be the user's real motion rather than the warp echo; measured against the
+    // center anchor, either one yields the correct delta.
     void setLastPosition(int x, int y);
 
   private:

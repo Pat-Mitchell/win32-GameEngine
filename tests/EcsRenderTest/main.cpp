@@ -347,7 +347,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       SetCursorPos((tl.x + br.x) / 2, (tl.y + br.y) / 2);
       // Anchor the mouse's last position to the warp target (in client coords), so
       // the recenter yields zero delta while real motion after it is still measured.
-      // Doing this instead of ignoreNextMove() survives WM_MOUSEMOVE coalescing.
+      // Anchoring to the known center (vs. just dropping the origin) survives
+      // WM_MOUSEMOVE coalescing.
       g_mouse.setLastPosition((rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2);
     }
 
