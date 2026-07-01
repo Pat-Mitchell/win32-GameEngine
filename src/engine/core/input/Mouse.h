@@ -42,12 +42,20 @@ class Mouse {
     // origin from it instead of producing motion, so the warp adds no false delta.
     void ignoreNextMove() { m_HasLast = false; }
 
+    // Anchor the "last known position" to a specific point, in the same client
+    // coordinate space onMove() receives. Use after a recenter warp: set this to
+    // the warp target (window center) so the recenter itself yields zero delta
+    // while real motion after it is still measured. Unlike ignoreNextMove(), this
+    // survives WM_MOUSEMOVE coalescing -- Windows keeps only the latest move in
+    // the queue, so the "next" move is the user's real motion, not the warp.
+    void setLastPosition(int x, int y);
+
   private:
     int m_X = 0;
     int m_Y = 0;
     float m_DeltaX = 0.0f;
     float m_DeltaY = 0.0f;
     bool m_Buttons[BUTTON_COUNT] = {};
-    bool m_HasLast = false; // false until the first move, to avoid a huge delta
     bool m_Locked = false;  // window layer enforces; this is just the intent
+    bool m_HasLast = false; // false until the first move, to avoid a huge delta
 };

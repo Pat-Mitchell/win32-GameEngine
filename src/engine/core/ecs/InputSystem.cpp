@@ -36,7 +36,7 @@ void InputSystem::update(float fDeltaTime) {
   Quaternion qPitch(Vec3(1.0f, 0.0f, 0.0f), m_Pitch * DEG2RAD);
   t.rotation = qYaw * qPitch;
 
-  // --- Keyboard fly movement, relative to the new orientation ---
+  // Keyboard fly movement, relative to the new orientation
   Vec3 forward = t.getForward();
   Vec3 right = t.getRight();
   Vec3 worldUp(0.0f, 1.0f, 0.0f);

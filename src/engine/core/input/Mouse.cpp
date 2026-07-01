@@ -38,6 +38,12 @@ void Mouse::consumeDelta() {
   m_DeltaY = 0.0f;
 }
 
+void Mouse::setLastPosition(int x, int y) {
+  m_X = x;
+  m_Y = y;
+  m_HasLast = true;
+}
+
 void Mouse::setLocked(bool locked) {
   m_Locked = locked;
   // Drop accumulated motion and re-seed the origin on the next move, so neither

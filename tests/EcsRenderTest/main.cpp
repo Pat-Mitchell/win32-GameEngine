@@ -8,6 +8,8 @@
 
 #include <windows.h>
 #include <windowsx.h> // GET_X_LPARAM / GET_Y_LPARAM (signed mouse coords)
+#include <iostream>
+#include <cstdio>
 
 #include "../../src/engine/core/ecs/World.h"
 #include "../../src/engine/core/ecs/MeshRenderer.h"
@@ -201,8 +203,30 @@ EntityID spawnCube(World& world, const Vec3& position) {
   return e;
 }
 
+void launchConsole() {
+  // 1. Allocate a new console window for the calling process
+  if(AllocConsole()) {
+    FILE* fp;
+        
+    // 2. Redirect standard output (stdout) to the console
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    // 3. Redirect standard input (stdin) to the console
+    freopen_s(&fp, "CONIN$", "r", stdin);
+    // 4. Redirect standard error (stderr) to the console
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+
+    // 5. Sync the C++ standard streams (cout, cin, cerr)
+    std::ios::sync_with_stdio();
+       
+    // Optional: Give your console window a custom title
+    SetConsoleTitle(L"Debug Console");
+  }
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
   const wchar_t* CLASS_NAME = L"ECS Render Test Window";
+
+  launchConsole();
 
   WNDCLASSEX wc = {};
   wc.cbSize = sizeof(WNDCLASSEX);
@@ -288,7 +312,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   g_pWorld->registerSystem(&inputSystem);
   g_pWorld->registerSystem(&renderSystem);
 
-  // --- Main loop: drain messages, then clear -> update world -> present ---
+  // Main loop: drain messages, then clear -> update world -> present
   MSG msg = {};
   bool running = true;
   while(running) {
@@ -303,13 +327,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     float dt = (float)(nowTick - lastTick) / 1000.0f;
     lastTick = nowTick;
 
-    g_pRenderer->clear(Vec3(0.1f, 0.1f, 0.15f));
+            if(g_mouse.getDeltaX() != 0 || g_mouse.getDeltaY() != 0) 
+      std::cout << g_mouse.getDeltaX() << ", " << g_mouse.getDeltaY() << std::endl;
+
+    g_pRenderer->clear(Vec3(0.1f, 0.1f, 0.15f));   
     g_pWorld->update(dt); // InputSystem moves the camera, RenderSystem draws entities
 
     // Cursor lock: confine to the window and snap back to center each frame so
     // look rotation is unbounded. update() already consumed this frame's delta.
-    // ignoreNextMove() stops the warp below from
-    // registering as motion. Recomputed every frame so it survives move/resize.
+    // Recomputed every frame so it survives window move/resize.
     if(g_mouse.isLocked()) {
       RECT rc;
       GetClientRect(hwnd, &rc);
@@ -318,8 +344,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
       ClientToScreen(hwnd, &br);
       RECT clip{ tl.x, tl.y, br.x, br.y };
       ClipCursor(&clip);
-      g_mouse.ignoreNextMove();
       SetCursorPos((tl.x + br.x) / 2, (tl.y + br.y) / 2);
+      // Anchor the mouse's last position to the warp target (in client coords), so
+      // the recenter yields zero delta while real motion after it is still measured.
+      // Doing this instead of ignoreNextMove() survives WM_MOUSEMOVE coalescing.
+      g_mouse.setLastPosition((rc.right - rc.left) / 2, (rc.bottom - rc.top) / 2);
     }
 
     SwapBuffers(g_hDC);
