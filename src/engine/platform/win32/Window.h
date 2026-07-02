@@ -32,6 +32,12 @@ class IWindowEvents {
     // Client-area size after a resize, in pixels.
     virtual void onResize(int width, int height) {}
 
+    // Window (true) or lost (false) input focus. On focus loss the app
+    // should clear held-key/button state. Key-up messages are delivered to
+    // whichever window has focus, so a key released while unfocused is never seen
+    // and would otherwise stay stuck down.
+    virtual void onFocus(bool focused) {}
+
     // The window was asked to close (WM_CLOSE / WM_DESTROY).
     virtual void onClose() {}
 };
@@ -79,12 +85,34 @@ class Window {
     int height() const { return m_Height; }
 
   private:
+    // The class-registered WndProc trampolines through the HWND's GWLP_USERDATA
+    // back to handleMessage() on the owning instance.
+    static LRESULT CALLBACK staticWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam);
+
+    bool createGLContext(const Desc& desc); // PFD + WGL. makes the context current
+    void recenterCursor();                  // relative mode: clip + warp to center + re-anchor
+    void onButtonDown(int button);          // ref-counts capture, forwards onMouseButton
+    void onButtonUp(int button);
+
     IWindowEvents* m_pHandler = nullptr;
     HWND m_Hwnd = nullptr;
     HDC m_hDC = nullptr;
     HGLRC m_hRC = nullptr;
     int m_Width = 0;
     int m_Height = 0;
+
+    // Last pointer position (client px) used to difference WM_MOUSEMOVE into the
+    // relative deltas onMouseMotion delivers. When raw input (WM_INPUT) replaces
+    // WM_MOUSEMOVE this bookkeeping disappears. The delta arrives ready.
+    // m_HasLast is false until the first move (and after a mode/focus change) so
+    // no jump is emitted against a stale or absent anchor.
+    int m_LastX = 0;
+    int m_LastY = 0;
+    bool m_HasLast = false;
+
+    int m_ButtonsDown = 0;       // held mouse buttons; capture spans the whole chord
+    bool m_HasFocus = true;      // don't warp the cursor while the window is unfocused
     bool m_RelativeMouse = false;
     bool m_ShouldClose = false;
 };
